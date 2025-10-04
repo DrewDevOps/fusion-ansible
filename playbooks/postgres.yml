@@ -1,0 +1,7 @@
+- hosts: postgres
+  become: true
+  become_method: sudo
+  vars:
+    ansible_become_flags: '-n'
+  roles:
+    - postgres

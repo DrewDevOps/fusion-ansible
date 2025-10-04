@@ -1,0 +1,6 @@
+- hosts: kamailio
+  become: true
+  vars_files: 
+    - ./vars/kamailio.yml
+  roles:
+    - kamailio

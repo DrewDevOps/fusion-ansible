@@ -1,0 +1,13 @@
+- name: Install docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Run jasmin container
+  docker_container:
+    name: jasmin
+    image: jasminsoftware/jasmin:latest
+    restart_policy: always
+    published_ports:
+      - "8770:8770"
+      - "2775:2775"

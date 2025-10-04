@@ -1,0 +1,49 @@
+- name: Install Kamailio
+  apt:
+    name: [kamailio, kamailio-postgres-modules]
+    state: present
+
+- name: Deploy Kamailio config
+  template:
+    src: kamailio.cfg.j2
+    dest: /etc/kamailio/kamailio.cfg
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create kamailio user home directory if not exists
+  file:
+    path: /var/lib/kamailio
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+    
+- name: Configure pgpass for kamailio user
+  copy:
+    dest: /home/ubuntu/.pgpass
+    content: "{{ db_host }}:5432:{{ db_name }}:{{ db_user }}:{{ db_password }}"
+
+- name: Set permissions on pgpass file
+  file:
+    path: /home/ubuntu/.pgpass
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+
+- name: Configure kamctlrc /etc/kamailio/kamctlrc for PostgreSQL
+  template:
+    src: kamctlrc.j2
+    dest: /etc/kamailio/kamctlrc
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Restart Kamailio
+  service:
+    name: kamailio
+    state: restarted
+    enabled: yes
+
+# RUN THE LAST STEP MANUALLY TO CREATE THE DATABASE:
+# kamdbctl create

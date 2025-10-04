@@ -1,0 +1,10 @@
+- name: Install FreeSWITCH
+  apt:
+    name: freeswitch
+    state: present
+
+- name: Deploy configs
+  template:
+    src: sip_profiles.xml.j2
+    dest: /etc/freeswitch/sip_profiles/internal.xml
+  notify: restart freeswitch

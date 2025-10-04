@@ -1,0 +1,51 @@
+
+- name: Ensure psycopg2 is installed (needed for Ansible's PostgreSQL modules)
+  ansible.builtin.apt:
+    name: python3-psycopg2
+    state: present
+
+- name: Install PostgreSQL
+  apt:
+    name: postgresql
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install PostgreSQL (RHEL family)
+  yum:
+    name: postgresql-server
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Get installed PostgreSQL version
+  command: psql -V
+  register: postgres_version
+  changed_when: false
+
+- set_fact:
+    pg_major: "{{ postgres_version.stdout.split(' ')[2].split('.')[0] }}"
+
+- name: Ensure DB is listening
+  lineinfile:
+    path: "/etc/postgresql/{{ pg_major }}/main/postgresql.conf"
+    regexp: '^#?listen_addresses'
+    line: "listen_addresses = '*'"
+  notify: Restart PostgreSQL
+  when: ansible_os_family == "Debian"
+
+- name: Ensure DB is listening
+  lineinfile:
+    path: "/var/lib/pgsql/{{ pg_major }}/data/postgresql.conf"
+    regexp: '^#?listen_addresses'
+    line: "listen_addresses = '*'"
+  notify: Restart PostgreSQL
+  when: ansible_os_family == "RedHat"
+
+- name: Create tmp files dir for Ansible
+  file:
+    path: /tmp/.ansible/tmp
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+    recurse: yes
+

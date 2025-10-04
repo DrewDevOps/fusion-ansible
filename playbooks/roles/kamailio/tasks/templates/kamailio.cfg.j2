@@ -1,0 +1,17 @@
+# Load database connector
+loadmodule "db_postgres.so"
+
+####### Modules Section ########
+
+# Core SIP reply handling (stateless)
+loadmodule "sl.so"
+
+# Record routing
+loadmodule "rr.so"
+
+# Load modules that use the DB
+loadmodule "usrloc.so"
+loadmodule "registrar.so"
+
+# Set DB URL on usrloc (NOT on db_postgres!)
+modparam("usrloc", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")

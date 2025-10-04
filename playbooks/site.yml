@@ -1,0 +1,24 @@
+- hosts: all
+  become: true
+  roles:
+    - common
+
+- hosts: kamailio
+  become: true
+  roles:
+    - kamailio
+
+- hosts: freeswitch
+  become: true
+  roles:
+    - freeswitch
+
+- hosts: jasmin
+  become: true
+  roles:
+    - jasmin
+
+- hosts: postgres
+  become: true
+  roles:
+    - postgres
