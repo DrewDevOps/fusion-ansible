@@ -2,6 +2,7 @@
   apt:
     name: [kamailio, kamailio-postgres-modules, kamailio-dispatcher-modules]
     state: present
+    update_cache: yes
 
 - name: Deploy Kamailio config
   template:
