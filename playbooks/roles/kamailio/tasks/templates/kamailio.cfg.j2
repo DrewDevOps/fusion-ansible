@@ -17,3 +17,48 @@ loadmodule "dispatcher.so"
 
 # Set DB URL on usrloc (NOT on db_postgres!)
 modparam("usrloc", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
+
+### Dispatcher Module Parameters ###
+modparam("dispatcher", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
+modparam("dispatcher", "table_name", "dispatcher")
+modparam("dispatcher", "flags", 2)
+modparam("dispatcher", "dst_avp", "$avp(dsdst)")
+modparam("dispatcher", "grp_avp", "$avp(dsgrp)")
+modparam("dispatcher", "cnt_avp", "$avp(dscnt)")
+
+####### Routing Logic Section ########
+# Main request routing logic
+request_route {
+    # Handle REGISTER requests
+    if (is_method("REGISTER")) {
+        if (!save("location")) {
+            sl_reply_error();
+        }
+        exit;
+    } 
+
+    # For other requests, just relay them
+    route[DISPATCHER] {
+        # Select destination
+        if (!ds_select_dst("1", "4")) {
+            xlog("L_ERR", "No destination found in dispatcher set 1\n");
+            send_reply("500", "No Destination Available");
+            exit;
+        }
+
+        # Route to selected gateway
+        xlog("L_INFO", "Dispatching call to: $du\n");
+        t_relay();
+        exit;
+    }
+
+
+    # Handle INVITE requests
+    request_route {
+    if (is_method("INVITE")) {
+        route(DISPATCHER);
+        exit;
+    }
+
+
+}
