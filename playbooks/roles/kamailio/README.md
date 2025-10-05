@@ -145,3 +145,51 @@ Kamailio handles SIP signaling but not media (voice, RTP). If you want IVR, voic
 3. Test calls through Kamailio.
 
 Do you want me to give you a **step-by-step to add SIP users in Postgres and test with Zoiper/Linphone softphones** so you can actually place calls through your Kamailio?
+
+1. Connect to Postgres:
+  ```
+  sudo -u postgres psql kamailio
+  \dt
+  ```
+2. Step 3 — Add SIP Users to the subscriber Table
+  ```
+  INSERT INTO subscriber (username, domain, password, ha1, ha1b)
+  VALUES (
+    'alice',
+    'delaphonegh.com',
+    'password123',
+    md5('alice:delaphonegh.com:password123'),
+    md5('alice@delaphonegh.com:delaphonegh.com:password123')
+  );
+
+  INSERT INTO subscriber (username, domain, password, ha1, ha1b)
+  VALUES (
+    'bob',
+    'delaphonegh.com',
+    'password123',
+    md5('bob:delaphonegh.com:password123'),
+    md5('bob@delaphonegh.com:delaphonegh.com:password123')
+  );
+  ```
+4. Step 4 — Restart Kamailio
+  ```
+  sudo systemctl restart kamailio
+  sudo systemctl status kamailio
+
+  ```
+5. Step 5 — Configure Zoiper / Linphone Clients
+   On Zoiper
+   i. Go to Settings → Accounts → Add Account
+   ii.Choose SIP
+        Enter:
+        User: alice
+        Password: password123
+        Domain / Host: your Kamailio server IP or FQDN (e.g., 192.168.1.10)
+   iii. Click “Register”
+   On Linphone
+    i. Go to Preferences → Manage SIP Accounts → Add
+    ii.SIP Identity: sip:alice@yourdomain.com
+      Password: password123
+      Proxy: sip:your-kamailio-ip:5060;transport=udp
+  You should see “Registered”.
+  Repeat for Bob on another device.

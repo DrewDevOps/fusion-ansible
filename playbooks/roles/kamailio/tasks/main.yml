@@ -1,6 +1,6 @@
 - name: Install Kamailio
   apt:
-    name: [kamailio, kamailio-postgres-modules]
+    name: [kamailio, kamailio-postgres-modules, kamailio-dispatcher-modules]
     state: present
 
 - name: Deploy Kamailio config
