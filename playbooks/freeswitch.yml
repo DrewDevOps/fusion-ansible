@@ -1,0 +1,4 @@
+- hosts: freeswitch
+  become: true
+  roles:
+    - freeswitch
