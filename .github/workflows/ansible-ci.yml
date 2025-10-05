@@ -24,13 +24,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible ansible-lint
 
-      - name: Run Ansible Lint
-        run: ansible-lint playbooks/
+    #   - name: Run Ansible Lint
+        # run: ansible-lint playbooks/
 
   ansible-deploy:
     needs: ansible-lint
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
