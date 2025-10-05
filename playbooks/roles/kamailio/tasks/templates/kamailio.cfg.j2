@@ -8,57 +8,223 @@ loadmodule "sl.so"
 
 # Record routing
 loadmodule "rr.so"
+loadmodule "tm.so"
+loadmodule "acc.so"
+loadmodule "jsonrpcs.so"
 
 # Load modules that use the DB
 loadmodule "usrloc.so"
 loadmodule "registrar.so"
 loadmodule "dispatcher.so"
 
-
 # Set DB URL on usrloc (NOT on db_postgres!)
 modparam("usrloc", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
 
 ### Dispatcher Module Parameters ###
+#modparam("dispatcher", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
+#modparam("dispatcher", "table_name", "dispatcher")
+#modparam("dispatcher", "flags", 2)
+#modparam("dispatcher", "dst_avp", "$avp(dsdst)")
+#modparam("dispatcher", "grp_avp", "$avp(dsgrp)")
+#modparam("dispatcher", "cnt_avp", "$avp(dscnt)")
+
+# ----------------- setting module-specific parameters ---------------
+
+
+# ----- jsonrpcs params -----
+modparam("jsonrpcs", "pretty_format", 1)
+
+
+# ----- rr params -----
+# add value to ;lr param to cope with most of the UAs
+modparam("rr", "enable_full_lr", 1)
+# do not append from tag to the RR (no need for this script)
+modparam("rr", "append_fromtag", 0)
+
+
+# ----- acc params -----
+modparam("acc", "log_flag", FLT_ACC)
+modparam("acc", "failed_transaction_flag", FLT_ACCFAILED)
+modparam("acc", "log_extra",
+	"src_user=$fU;src_domain=$fd;dst_ouser=$tU;dst_user=$rU;dst_domain=$rd;src_ip=$si")
+
+# ----- tm params -----
+modparam("tm", "fr_timer", 2000)
+modparam("tm", "fr_inv_timer", 40000)
+
+# ----- dispatcher params -----
 modparam("dispatcher", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
 modparam("dispatcher", "table_name", "dispatcher")
 modparam("dispatcher", "flags", 2)
-modparam("dispatcher", "dst_avp", "$avp(dsdst)")
-modparam("dispatcher", "grp_avp", "$avp(dsgrp)")
-modparam("dispatcher", "cnt_avp", "$avp(dscnt)")
+modparam("dispatcher", "xavp_dst", "_dsdst_")
+modparam("dispatcher", "xavp_ctx", "_dsctx_")
+modparam("dispatcher", "ds_ping_from", "sip:proxy@kamailio.org")
+modparam("dispatcher", "ds_ping_interval", 60)
+modparam("dispatcher", "ds_probing_mode", 1)
+modparam("dispatcher", "ds_timer_mode", 1)
 
-####### Routing Logic Section ########
-# Main request routing logic
+####### Routing Logic ########
+
+
+# main request routing logic
+
 request_route {
-    # Handle REGISTER requests
-    if (is_method("REGISTER")) {
-        if (!save("location")) {
-            sl_reply_error();
-        }
-        exit;
-    } 
 
-    # For other requests, just relay them
-    route[DISPATCHER] {
-        # Select destination
-        if (!ds_select_dst("1", "4")) {
-            xlog("L_ERR", "No destination found in dispatcher set 1\n");
-            send_reply("500", "No Destination Available");
-            exit;
-        }
+	# per request initial checks
+	route(REQINIT);
 
-        # Route to selected gateway
-        xlog("L_INFO", "Dispatching call to: $du\n");
-        t_relay();
-        exit;
-    }
+	# CANCEL processing
+	if (is_method("CANCEL")) {
+		if (t_check_trans()) {
+			route(RELAY);
+		}
+		exit;
+	}
+
+	# handle retransmissions
+	if (!is_method("ACK")) {
+		if(t_precheck_trans()) {
+			t_check_trans();
+			exit;
+		}
+		t_check_trans();
+	}
+
+	# handle requests within SIP dialogs
+	route(WITHINDLG);
+
+	### only initial requests (no To tag)
+
+	# record routing for dialog forming requests (in case they are routed)
+	# - remove preloaded route headers
+	remove_hf("Route");
+	if (is_method("INVITE|SUBSCRIBE")) {
+		record_route();
+	}
+
+	# account only INVITEs
+	if (is_method("INVITE")) {
+		setflag(FLT_ACC); # do accounting
+	}
+
+	# handle presence related requests
+	route(PRESENCE);
+
+	# handle registrations
+	route(REGISTRAR);
+
+	if ($rU==$null) {
+		# request with no Username in RURI
+		sl_send_reply("484","Address Incomplete");
+		exit;
+	}
+
+	# dispatch destinations
+	route(DISPATCH);
+}
 
 
-    # Handle INVITE requests
-    request_route {
-    if (is_method("INVITE")) {
-        route(DISPATCHER);
-        exit;
-    }
+route[RELAY] {
+	if (!t_relay()) {
+		sl_reply_error();
+	}
+	exit;
+}
 
+# Per SIP request initial checks
+route[REQINIT] {
+	if (!mf_process_maxfwd_header("10")) {
+		sl_send_reply("483","Too Many Hops");
+		exit;
+	}
 
+	if(!sanity_check("1511", "7")) {
+		xlog("Malformed SIP message from $si:$sp\n");
+		exit;
+	}
+}
+
+# Handle requests within SIP dialogs
+route[WITHINDLG] {
+	if (!has_totag()) {
+		return;
+	}
+
+	# sequential request within a dialog should
+	# take the path determined by record-routing
+	if (loose_route()) {
+		if (is_method("BYE")) {
+			setflag(FLT_ACC); # do accounting ...
+			setflag(FLT_ACCFAILED); # ... even if the transaction fails
+		}
+		route(RELAY);
+	}
+
+	if (is_method("SUBSCRIBE") && uri == myself) {
+		# in-dialog subscribe requests
+		route(PRESENCE);
+	}
+
+	if ( is_method("ACK") ) {
+		if ( t_check_trans() ) {
+			# non loose-route, but stateful ACK;
+			# must be ACK after a 487 or e.g. 404 from upstream server
+			t_relay();
+			exit;
+		} else {
+			# ACK without matching transaction ... ignore and discard.
+			exit;
+		}
+	}
+
+	sl_send_reply("404","Not here");
+	exit;
+}
+
+# Handle SIP registrations
+route[REGISTRAR] {
+	if(!is_method("REGISTER"))
+		return;
+
+	sl_send_reply("404", "No registrar");
+	exit;
+}
+
+# Presence server route
+route[PRESENCE] {
+	if(!is_method("PUBLISH|SUBSCRIBE"))
+		return;
+
+	sl_send_reply("404", "Not here");
+	exit;
+}
+
+# Dispatch requests
+route[DISPATCH] {
+	# round robin dispatching on gateways group '1'
+	if(!ds_select_dst("1", "4")) {
+		send_reply("404", "No destination");
+		exit;
+	}
+	xdbg("--- SCRIPT: going to <$ru> via <$du> (attrs: $xavp(_dsdst_=>attrs))\n");
+	t_on_failure("RTF_DISPATCH");
+	route(RELAY);
+	exit;
+}
+
+# Try next destionations in failure route
+failure_route[RTF_DISPATCH] {
+	if (t_is_canceled()) {
+		exit;
+	}
+	# next DST - only for 500 or local timeout
+	if (t_check_status("500")
+			or (t_branch_timeout() and !t_branch_replied())) {
+		if(ds_next_dst()) {
+			xdbg("--- SCRIPT: retrying to <$ru> via <$du> (attrs: $xavp(_dsdst_=>attrs))\n");
+			t_on_failure("RTF_DISPATCH");
+			route(RELAY);
+			exit;
+		}
+	}
 }
