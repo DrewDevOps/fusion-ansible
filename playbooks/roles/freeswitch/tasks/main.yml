@@ -3,18 +3,15 @@
     repo: "deb http://files.freeswitch.org/repo/deb/freeswitch-1.10-buster/ {{ ansible_distribution_release }} main"
     state: present
     filename: freeswitch
-    become: yes
 
 - name: Import FreeSWITCH GPG key
   ansible.builtin.apt_key:
     url: https://files.freeswitch.org/repo/deb/freeswitch-1.10-buster/fsstretch-archive-keyring.gpg
     state: present
-    become: yes
 
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
-    become: yes
 
 - name: Install FreeSWITCH
   ansible.builtin.apt:
@@ -25,7 +22,6 @@
       - freeswitch-sounds-en-us-callie
       - freeswitch-music-default
     state: present
-    become: yes
 
 
 # - name: Restart FreeSWITCH
