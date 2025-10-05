@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<include>
+
+  <!-- ===================================================== -->
+  <!--  Internal Profile (for SIP endpoints and extensions)   -->
+  <!-- ===================================================== -->
+  <profile name="internal">
+    <aliases>default</aliases>
+
+    <!-- SIP Interface -->
+    <settings>
+      <param name="debug" value="0"/>
+      <param name="sip-trace" value="no"/>
+      <param name="log-auth-failures" value="yes"/>
+      <param name="auth-calls" value="true"/>
+
+      <!-- Network Bindings -->
+      <param name="sip-ip" value="{{ freeswitch_internal_ip | default(ansible_default_ipv4.address) }}"/>
+      <param name="rtp-ip" value="{{ freeswitch_internal_ip | default(ansible_default_ipv4.address) }}"/>
+      <param name="ext-sip-ip" value="{{ freeswitch_external_ip | default('auto-nat') }}"/>
+      <param name="ext-rtp-ip" value="{{ freeswitch_external_ip | default('auto-nat') }}"/>
+
+      <!-- Transport Protocols -->
+      <param name="sip-port" value="{{ internal_sip_port | default(5060) }}"/>
+      <param name="tls" value="{{ enable_tls | default('false') }}"/>
+      <param name="tls-only" value="false"/>
+      <param name="tls-bind-params" value="transport=tls"/>
+      <param name="tls-cert-dir" value="/etc/freeswitch/tls"/>
+      <param name="tls-cert-file" value="{{ tls_cert_file | default('/etc/freeswitch/tls/wildcard.pem') }}"/>
+      <param name="tls-key-file" value="{{ tls_key_file | default('/etc/freeswitch/tls/wildcard.key') }}"/>
+
+      <!-- Authentication -->
+      <param name="auth-calls" value="true"/>
+      <param name="inbound-proxy-media" value="false"/>
+      <param name="inbound-late-negotiation" value="true"/>
+
+      <!-- RTP Handling -->
+      <param name="rtp-timeout-sec" value="300"/>
+      <param name="rtp-hold-timeout-sec" value="1800"/>
+      <param name="disable-transcoding" value="false"/>
+      <param name="codec-prefs" value="PCMU,PCMA,OPUS,G722"/>
+      <param name="inbound-codec-negotiation" value="generous"/>
+
+      <!-- NAT Traversal -->
+      <param name="aggressive-nat-detection" value="true"/>
+      <param name="rtp-rewrite-timestamps" value="true"/>
+
+      <!-- Registrar -->
+      <param name="accept-blind-auth" value="false"/>
+      <param name="accept-blind-reg" value="false"/>
+      <param name="enable-register" value="true"/>
+      <param name="force-register-domain" value="{{ domain_name | default(inventory_hostname) }}"/>
+
+      <!-- Kamailio Integration -->
+      <param name="record-path" value="/var/lib/freeswitch/recordings"/>
+      <param name="dialplan" value="XML"/>
+      <param name="context" value="public"/>
+    </settings>
+  </profile>
+
+  <!-- ===================================================== -->
+  <!--  External Profile (for upstream SBC / carriers)        -->
+  <!-- ===================================================== -->
+  <profile name="external">
+    <settings>
+      <param name="sip-ip" value="{{ freeswitch_external_ip | default(ansible_default_ipv4.address) }}"/>
+      <param name="rtp-ip" value="{{ freeswitch_external_ip | default(ansible_default_ipv4.address) }}"/>
+      <param name="sip-port" value="{{ external_sip_port | default(5080) }}"/>
+      <param name="auth-calls" value="false"/>
+
+      <param name="context" value="public"/>
+      <param name="tls" value="false"/>
+      <param name="inbound-proxy-media" value="true"/>
+      <param name="rtp-timeout-sec" value="60"/>
+      <param name="rtp-hold-timeout-sec" value="1800"/>
+
+      <!-- Kamailio Integration -->
+      <param name="ext-sip-ip" value="{{ freeswitch_external_ip | default('auto-nat') }}"/>
+      <param name="ext-rtp-ip" value="{{ freeswitch_external_ip | default('auto-nat') }}"/>
+      <param name="alias" value="public"/>
+    </settings>
+  </profile>
+
+</include>

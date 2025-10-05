@@ -6,5 +6,9 @@
 - name: Deploy configs
   template:
     src: sip_profiles.xml.j2
-    dest: /etc/freeswitch/sip_profiles/internal.xml
-  notify: restart freeswitch
+    dest: /etc/freeswitch/sip_profiles/sip_profiles.xml
+
+- name: Restart FreeSWITCH
+  service:
+    name: freeswitch
+    state: restarted

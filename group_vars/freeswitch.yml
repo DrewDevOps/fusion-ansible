@@ -1,0 +1,8 @@
+freeswitch_internal_ip: "10.0.0.5"
+freeswitch_external_ip: "102.22.27.148"
+internal_sip_port: 5060
+external_sip_port: 5080
+enable_tls: true
+tls_cert_file: "/etc/freeswitch/tls/freeswitch.pem"
+tls_key_file: "/etc/freeswitch/tls/freeswitch.key"
+domain_name: "102.22.27.148"
