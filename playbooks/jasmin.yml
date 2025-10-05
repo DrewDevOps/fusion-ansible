@@ -1,0 +1,4 @@
+- hosts: jasmin
+  become: true
+  roles:
+    - jasmin
