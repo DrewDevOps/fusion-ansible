@@ -1,14 +1,34 @@
-- name: Install FreeSWITCH
-  apt:
-    name: freeswitch
+- name: Add FreeSWITCH repository
+  ansible.builtin.apt_repository:
+    repo: "deb http://files.freeswitch.org/repo/deb/freeswitch-1.10-buster/ {{ ansible_distribution_release }} main"
     state: present
+    filename: freeswitch
+    become: yes
 
-- name: Deploy configs
-  template:
-    src: sip_profiles.xml.j2
-    dest: /etc/freeswitch/sip_profiles/sip_profiles.xml
+- name: Import FreeSWITCH GPG key
+  ansible.builtin.apt_key:
+    url: https://files.freeswitch.org/repo/deb/freeswitch-1.10-buster/fsstretch-archive-keyring.gpg
+    state: present
+    become: yes
 
-- name: Restart FreeSWITCH
-  service:
-    name: freeswitch
-    state: restarted
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    become: yes
+
+- name: Install FreeSWITCH
+  ansible.builtin.apt:
+    name:
+      - freeswitch
+      - freeswitch-conf-vanilla
+      - freeswitch-lang-en
+      - freeswitch-sounds-en-us-callie
+      - freeswitch-music-default
+    state: present
+    become: yes
+
+
+# - name: Restart FreeSWITCH
+#   service:
+#     name: freeswitch
+#     state: restarted
