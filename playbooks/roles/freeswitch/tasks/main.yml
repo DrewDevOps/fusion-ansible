@@ -22,7 +22,7 @@
       - libsndfile1-dev
       - liblua5.2-dev
     state: present
-    update_cache: yes
+    # update_cache: yes
 
 - name: Clone FreeSWITCH source
   git:
