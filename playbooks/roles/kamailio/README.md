@@ -193,3 +193,6 @@ Do you want me to give you a **step-by-step to add SIP users in Postgres and tes
       Proxy: sip:your-kamailio-ip:5060;transport=udp
   You should see “Registered”.
   Repeat for Bob on another device.
+
+  ---
+  Reference Kamailio documentation: https://www.kamailio.org/docs/modules/stable/modules/dispatcher.html

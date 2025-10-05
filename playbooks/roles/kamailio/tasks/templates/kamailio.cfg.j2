@@ -8,60 +8,14 @@ loadmodule "sl.so"
 
 # Record routing
 loadmodule "rr.so"
-loadmodule "tm.so"
-loadmodule "acc.so"
-loadmodule "jsonrpcs.so"
 
 # Load modules that use the DB
 loadmodule "usrloc.so"
 loadmodule "registrar.so"
-loadmodule "dispatcher.so"
 
 # Set DB URL on usrloc (NOT on db_postgres!)
 modparam("usrloc", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
 
-### Dispatcher Module Parameters ###
-#modparam("dispatcher", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
-#modparam("dispatcher", "table_name", "dispatcher")
-#modparam("dispatcher", "flags", 2)
-#modparam("dispatcher", "dst_avp", "$avp(dsdst)")
-#modparam("dispatcher", "grp_avp", "$avp(dsgrp)")
-#modparam("dispatcher", "cnt_avp", "$avp(dscnt)")
-
-# ----------------- setting module-specific parameters ---------------
-
-
-# ----- jsonrpcs params -----
-# modparam("jsonrpcs", "pretty_format", 1)
-
-
-# ----- rr params -----
-# add value to ;lr param to cope with most of the UAs
-# modparam("rr", "enable_full_lr", 1)
-# do not append from tag to the RR (no need for this script)
-# modparam("rr", "append_fromtag", 0)
-
-
-# ----- acc params -----
-# modparam("acc", "log_flag", FLT_ACC)
-# modparam("acc", "failed_transaction_flag", FLT_ACCFAILED)
-# modparam("acc", "log_extra",
-# 	"src_user=$fU;src_domain=$fd;dst_ouser=$tU;dst_user=$rU;dst_domain=$rd;src_ip=$si")
-
-# ----- tm params -----
-# modparam("tm", "fr_timer", 2000)
-# modparam("tm", "fr_inv_timer", 40000)
-
-# ----- dispatcher params -----
-# modparam("dispatcher", "db_url", "postgres://{{ db_user }}:'{{ db_password }}'@{{ db_host }}/{{ db_name }}")
-# modparam("dispatcher", "table_name", "dispatcher")
-# modparam("dispatcher", "flags", 2)
-# modparam("dispatcher", "xavp_dst", "_dsdst_")
-# modparam("dispatcher", "xavp_ctx", "_dsctx_")
-# modparam("dispatcher", "ds_ping_from", "sip:proxy@kamailio.org")
-# modparam("dispatcher", "ds_ping_interval", 60)
-# modparam("dispatcher", "ds_probing_mode", 1)
-# modparam("dispatcher", "ds_timer_mode", 1)
 
 ####### Routing Logic ########
 # main request routing logic
