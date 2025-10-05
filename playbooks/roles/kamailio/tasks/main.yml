@@ -1,6 +1,6 @@
 - name: Install Kamailio
   apt:
-    name: [kamailio, kamailio-postgres-modules, kamailio-dispatcher-modules]
+    name: [kamailio, kamailio-postgres-modules]
     state: present
     update_cache: yes
 
