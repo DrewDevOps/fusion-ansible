@@ -1,19 +1,19 @@
-- name: Add FreeSWITCH repository
+- name: Add SignalWire FreeSWITCH repository
   ansible.builtin.apt_repository:
-    repo: "deb http://files.freeswitch.org/repo/deb/freeswitch-1.10-buster/ {{ ansible_distribution_release }} main"
+    repo: "deb https://signalwire-oss-repo.s3.amazonaws.com/repo/deb/debian/ {{ ansible_distribution_release }} main"
     state: present
     filename: freeswitch
 
 - name: Import FreeSWITCH GPG key
   ansible.builtin.apt_key:
-    url: https://files.freeswitch.org/repo/deb/freeswitch-1.10-buster/fsstretch-archive-keyring.gpg
+    url: https://signalwire-oss-repo.s3.amazonaws.com/repo/deb/debian/signalwire-freeswitch-repo.gpg
     state: present
 
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
 
-- name: Install FreeSWITCH
+- name: Install FreeSWITCH packages
   ansible.builtin.apt:
     name:
       - freeswitch
@@ -22,9 +22,3 @@
       - freeswitch-sounds-en-us-callie
       - freeswitch-music-default
     state: present
-
-
-# - name: Restart FreeSWITCH
-#   service:
-#     name: freeswitch
-#     state: restarted
