@@ -49,11 +49,6 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-    
-      - name: Set up known hosts
-        run: |
-         mkdir -p ~/.ssh
-         ssh-keyscan -H your.server.com >> ~/.ssh/known_hosts
 
       - name: Run Ansible Playbook
         run: |
