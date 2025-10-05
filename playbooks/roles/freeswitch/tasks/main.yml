@@ -1,24 +1,51 @@
-- name: Add SignalWire FreeSWITCH repository
-  ansible.builtin.apt_repository:
-    repo: "deb https://signalwire-oss-repo.s3.amazonaws.com/repo/deb/debian/ {{ ansible_distribution_release }} main"
+- name: Install FreeSWITCH build dependencies
+  apt:
+    name:
+      - git
+      - wget
+      - gnupg2
+      - lsb-release
+      - build-essential
+      - pkg-config
+      - libtool
+      - autoconf
+      - automake
+      - libncurses5-dev
+      - libssl-dev
+      - libcurl4-openssl-dev
+      - libpcre3-dev
+      - libspeexdsp-dev
+      - libsqlite3-dev
+      - libedit-dev
+      - libldns-dev
+      - libopus-dev
+      - libsndfile1-dev
+      - liblua5.2-dev
     state: present
-    filename: freeswitch
-
-- name: Import FreeSWITCH GPG key
-  ansible.builtin.apt_key:
-    url: https://signalwire-oss-repo.s3.amazonaws.com/repo/deb/debian/signalwire-freeswitch-repo.gpg
-    state: present
-
-- name: Update apt cache
-  ansible.builtin.apt:
     update_cache: yes
 
-- name: Install FreeSWITCH packages
-  ansible.builtin.apt:
-    name:
-      - freeswitch
-      - freeswitch-conf-vanilla
-      - freeswitch-lang-en
-      - freeswitch-sounds-en-us-callie
-      - freeswitch-music-default
-    state: present
+- name: Clone FreeSWITCH source
+  git:
+    repo: https://github.com/signalwire/freeswitch.git
+    dest: /usr/src/freeswitch
+    version: v1.10.11
+
+- name: Build and install FreeSWITCH
+  shell: |
+    cd /usr/src/freeswitch
+    ./bootstrap.sh -j
+    ./configure
+    make -j$(nproc)
+    make install
+    make sounds-install moh-install
+  args:
+    creates: /usr/local/freeswitch/bin/freeswitch
+
+# setup sip profile configuration file with Jinja2 templating to use variables from group_vars
+- name: Deploy FreeSWITCH configuration
+  template:
+    src: vars/freeswitch_sip_profiles.xml.j2
+    dest: /usr/local/freeswitch/conf/sip_profiles/sip_profiles.xml
+    owner: root
+    group: root
+    mode: '0644'
