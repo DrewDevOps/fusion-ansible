@@ -1,4 +1,6 @@
 - hosts: freeswitch
   become: true
+  vars_files: 
+    - ./vars/freeswitch.yml
   roles:
     - freeswitch

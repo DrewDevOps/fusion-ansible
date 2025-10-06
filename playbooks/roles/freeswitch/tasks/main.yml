@@ -24,6 +24,12 @@
     state: present
     # update_cache: yes
 
+- name: Add authenticated FreeSWITCH repo
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://{{ fs_username }}:{{ fs_password }}@files.freeswitch.org/repo/deb/freeswitch-1.10-bookworm/ bookworm main"
+    state: present
+    filename: freeswitch
+
 - name: Clone FreeSWITCH source
   git:
     repo: https://github.com/signalwire/freeswitch.git
