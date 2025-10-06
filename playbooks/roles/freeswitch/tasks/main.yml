@@ -1,29 +1,3 @@
-- name: Install FreeSWITCH build dependencies
-  apt:
-    name:
-      - git
-      - wget
-      - gnupg2
-      - lsb-release
-      - build-essential
-      - pkg-config
-      - libtool
-      - autoconf
-      - automake
-      - libncurses5-dev
-      - libssl-dev
-      - libcurl4-openssl-dev
-      - libpcre3-dev
-      - libspeexdsp-dev
-      - libsqlite3-dev
-      - libedit-dev
-      - libldns-dev
-      - libopus-dev
-      - libsndfile1-dev
-      - liblua5.2-dev
-    state: present
-    # update_cache: yes
-
 - name: Remove any old FreeSWITCH repo definitions
   ansible.builtin.file:
     path: /etc/apt/sources.list.d/freeswitch.list
@@ -49,6 +23,32 @@
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
+    
+- name: Install FreeSWITCH build dependencies
+  apt:
+    name:
+      - git
+      - wget
+      - gnupg2
+      - lsb-release
+      - build-essential
+      - pkg-config
+      - libtool
+      - autoconf
+      - automake
+      - libncurses5-dev
+      - libssl-dev
+      - libcurl4-openssl-dev
+      - libpcre3-dev
+      - libspeexdsp-dev
+      - libsqlite3-dev
+      - libedit-dev
+      - libldns-dev
+      - libopus-dev
+      - libsndfile1-dev
+      - liblua5.2-dev
+    state: present
+    # update_cache: yes
 
 - name: Clone FreeSWITCH source
   git:
