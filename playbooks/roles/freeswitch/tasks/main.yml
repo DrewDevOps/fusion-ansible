@@ -8,17 +8,17 @@
     path: /usr/share/keyrings/freeswitch-archive-keyring.gpg
     state: absent
 
-- name: Import FreeSWITCH GPG key
-  ansible.builtin.get_url:
-    url: https://files.freeswitch.org/repo/deb/freeswitch-1.10-bookworm/freeswitch-archive-keyring.gpg
-    dest: /usr/share/keyrings/freeswitch-archive-keyring.gpg
-    mode: '0644'
-
 - name: Add authenticated FreeSWITCH repository
   ansible.builtin.apt_repository:
     repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/freeswitch-archive-keyring.gpg] https://{{ fs_username }}:{{ fs_password }}@files.freeswitch.org/repo/deb/freeswitch-1.10-bookworm/ bookworm main"
     state: present
     filename: freeswitch
+
+- name: Import FreeSWITCH GPG key
+  ansible.builtin.get_url:
+    url: https://files.freeswitch.org/repo/deb/freeswitch-1.10-bookworm/freeswitch-archive-keyring.gpg
+    dest: /usr/share/keyrings/freeswitch-archive-keyring.gpg
+    mode: '0644'
 
 - name: Update apt cache
   ansible.builtin.apt:
