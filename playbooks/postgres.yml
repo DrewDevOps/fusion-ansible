@@ -3,5 +3,7 @@
   become_method: sudo
   vars:
     ansible_become_flags: '-n'
+    pg_user: "admin"
+    pg_password: "test"
   roles:
     - postgres

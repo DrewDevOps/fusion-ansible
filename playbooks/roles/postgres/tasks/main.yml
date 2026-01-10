@@ -49,3 +49,10 @@
     group: "{{ ansible_user_gid }}"
     recurse: yes
 
+#create a database user
+- name: Create PostgreSQL user
+  postgresql_user:
+    name: "{{ pg_user }}"
+    password: "{{ pg_password }}"
+    role_attr_flags: "LOGIN,SUPERUSER"
+  become_user: postgres

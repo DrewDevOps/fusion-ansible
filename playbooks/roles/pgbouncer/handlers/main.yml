@@ -1,0 +1,6 @@
+#handler to notify: Restart pgbouncer
+- name: Restart pgbouncer
+  ansible.builtin.systemd:
+    name: pgbouncer
+    state: restarted
+    enabled: yes
