@@ -1,17 +1,6 @@
 - hosts: freeswitch
   become: true
   vars:
-    fusionpbx_repo: "https://github.com/fusionpbx/fusionpbx-install.sh.git"
-    fusionpbx_src: "/usr/src/fusionpbx-install.sh"
-    marker_dir: "/var/log/fusionpbx"
-    preinstall_marker: "{{ marker_dir }}/pre-install.done"
-    install_marker: "{{ marker_dir }}/install.done"
-    debian_preinstall_path: "{{ fusionpbx_src }}/debian/pre-install.sh"
-    debian_install_path: "{{ fusionpbx_src }}/debian/install.sh"
-    # customize these if you want different behavior
-    enable_lets_encrypt: false
-    domain_name: "fusion.example.com"
-  # vars_files: 
-  #   - ./vars/freeswitch.yml
+    signalwire_token: "pat_3ALMoSWsdvtujMgiKZJPqs8B"
   roles:
     - freeswitch

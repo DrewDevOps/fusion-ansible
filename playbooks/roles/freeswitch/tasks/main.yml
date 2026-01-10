@@ -1,166 +1,35 @@
+# export TOKEN=your_token_here
 
-- name: Ensure /var/log/fusionpbx exists
-  file:
-    path: "{{ marker_dir }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0755"
+# apt-get update && apt-get install -y gnupg2 wget lsb-release
 
-- name: Update apt cache
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600
+# wget --http-user=signalwire --http-password=$TOKEN -O /usr/share/keyrings/signalwire-freeswitch-repo.gpg https://freeswitch.signalwire.com/repo/deb/debian-release/signalwire-freeswitch-repo.gpg
 
-- name: Install required base packages (git, wget, curl, gnupg ...)
-  apt:
-    name:
-      - git
-      - wget
-      - curl
-      - lsb-release
-      - ca-certificates
-      - gnupg
-      - apt-transport-https
-      - software-properties-common
-    state: present
-    force_apt_get: yes
+# echo "machine freeswitch.signalwire.com login signalwire password $TOKEN" > /etc/apt/auth.conf
 
-- name: Ensure /usr/src exists
-  file:
-    path: /usr/src
-    state: directory
-    mode: "0755"
+# chmod 600 /etc/apt/auth.conf
 
-- name: Clone fusionpbx install repository (official)
-  git:
-    repo: "{{ fusionpbx_repo }}"
-    dest: "{{ fusionpbx_src }}"
-    version: master
-    force: yes
-  register: git_clone
+# echo "deb [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ lsb_release -sc main" > /etc/apt/sources.list.d/freeswitch.list
 
-- name: Ensure pre-install and install scripts are executable (if present)
-  file:
-    path: "{{ item }}"
-    mode: "0755"
-  loop:
-    - "{{ debian_preinstall_path }}"
-    - "{{ debian_install_path }}"
-  ignore_errors: true
+# echo "deb-src [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ lsb_release -sc main" >> /etc/apt/sources.list.d/freeswitch.list
 
-- name: Run official Debian pre-install script (once)
-  command: "bash {{ debian_preinstall_path }}"
+
+# apt-get update && apt-get install -y freeswitch-meta-all
+
+- name: Run Freeswitch installation script
+  shell: |
+    export TOKEN={{ signalwire_token }}
+
+    apt-get update && apt-get install -y gnupg2 wget lsb-release
+
+    wget --http-user=signalwire --http-password=$TOKEN -O /usr/share/keyrings/signalwire-freeswitch-repo.gpg https://freeswitch.signalwire.com/repo/deb/debian-release/signalwire-freeswitch-repo.gpg
+
+    echo "machine freeswitch.signalwire.com login signalwire password $TOKEN" > /etc/apt/auth.conf
+
+    chmod 600 /etc/apt/auth.conf
+
+    echo "deb [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ bookworm main" > /etc/apt/sources.list.d/freeswitch.list
+    echo "deb-src [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ bookworm main" >> /etc/apt/sources.list.d/freeswitch.list
+
+    apt-get update && apt-get install -y freeswitch-meta-all
   args:
-    chdir: "{{ fusionpbx_src }}/debian"
-    creates: "{{ preinstall_marker }}"
-  environment:
-    DEBIAN_FRONTEND: noninteractive
-  register: preinstall_run
-  changed_when: preinstall_run.rc == 0
-  failed_when: preinstall_run.rc != 0 and preinstall_run.rc != 2
-  when: preinstall_run is not defined or preinstall_run is failed or preinstall_run is skipped
-  ignore_errors: false
-
-- name: Create pre-install marker
-  file:
-    path: "{{ preinstall_marker }}"
-    state: touch
-  when: preinstall_run is defined and preinstall_run.rc == 0
-
-- name: Run official Debian install script (once)
-  command: "./install.sh"
-  args:
-    chdir: "{{ fusionpbx_src }}/debian"
-    creates: "{{ install_marker }}"
-  environment:
-    DEBIAN_FRONTEND: noninteractive
-  register: install_run
-  changed_when: install_run.rc == 0
-  failed_when: install_run.rc != 0
-  ignore_errors: false
-
-- name: Create install marker
-  file:
-    path: "{{ install_marker }}"
-    state: touch
-  when: install_run is defined and install_run.rc == 0
-
-- name: Gather service facts
-  service_facts:
-
-- name: Ensure core services are enabled & started (if present)
-  systemd:
-    name: "{{ item }}"
-    enabled: yes
-    state: started
-  loop:
-    - nginx
-    # - postgresql
-    - freeswitch
-  when: item in ansible_facts.services
-  ignore_errors: true
-
-- name: Ensure a php-fpm instance is enabled/started (try common names)
-  systemd:
-    name: "{{ item }}"
-    enabled: yes
-    state: started
-  loop:
-    - php8.2-fpm
-    - php8.1-fpm
-    - php8.0-fpm
-    - php-fpm
-  when: item in ansible_facts.services
-  ignore_errors: true
-
-- name: Install ufw (optional firewall)
-  apt:
-    name: ufw
-    state: present
-
-- name: Allow SSH through UFW
-  ufw:
-    rule: allow
-    name: OpenSSH
-
-- name: Allow HTTP and HTTPS through UFW
-  ufw:
-    rule: allow
-    port: "{{ item }}"
-    proto: tcp
-  loop:
-    - 80
-    - 443
-
-- name: Allow SIP (UDP/TCP 5060) if you plan direct SIP (adjust if you use SBC)
-  ufw:
-    rule: allow
-    port: "{{ item }}"
-    proto: "{{ proto }}"
-  loop:
-    - { item: 5060, proto: udp }
-    - { item: 5060, proto: tcp }
-  loop_control:
-    loop_var: sip_rule
-  vars:
-    item: "{{ sip_rule.item }}"
-    proto: "{{ sip_rule.proto }}"
-  ignore_errors: true
-
-- name: Enable UFW (if not enabled)
-  ufw:
-    state: enabled
-    policy: deny
-  when: ansible_facts.packages.ufw is defined or (ansible_facts['os_family'] == 'Debian')
-  ignore_errors: true
-
-- name: Show install log tail (if exists) for quick debugging
-  command: "tail -n 200 /root/fusionpbx-install.log"
-  register: install_log_tail
-  failed_when: false
-  changed_when: false
-
-- name: Print install log tail (summary)
-  debug:
-    msg: "{{ install_log_tail.stdout_lines | default([]) }}"
+    executable: /bin/bash
