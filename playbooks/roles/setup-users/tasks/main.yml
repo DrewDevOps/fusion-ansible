@@ -1,0 +1,37 @@
+- name: Ensure user exists with home directory
+  user:
+    name: "{{ new_user }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Ensure .ssh directory exists
+  file:
+    path: "/home/{{ new_user }}/.ssh"
+    state: directory
+    owner: "{{ new_user }}"
+    group: "{{ new_user }}"
+    mode: "0700"
+
+- name: Add local public key to authorized_keys
+  authorized_key:
+    user: "{{ new_user }}"
+    state: present
+    key: "{{ lookup('file', local_public_key) }}"
+
+- name: Add user to sudo group
+  user:
+    name: "{{ new_user }}"
+    groups: sudo
+    append: true
+
+- name: Lock password login
+  user:
+    name: "{{ new_user }}"
+    password_lock: true
+
+- name: Allow passwordless sudo
+  copy:
+    dest: /etc/sudoers.d/{{ new_user }}
+    content: "{{ new_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    mode: "0440"

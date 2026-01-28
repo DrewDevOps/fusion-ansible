@@ -1,0 +1,11 @@
+#ansible script to install pgbouncer
+- name: Install pgbouncer
+  apt:
+    name: pgbouncer
+    state: present 
+
+- name: Configure pgbouncer
+  template:
+    src: pgbouncer.ini.j2
+    dest: /etc/pgbouncer/pgbouncer.ini
+  notify: Restart pgbouncer

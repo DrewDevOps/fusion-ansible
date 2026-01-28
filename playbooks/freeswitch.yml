@@ -1,6 +1,6 @@
 - hosts: freeswitch
   become: true
   vars:
-    signalwire_token: "pat_3ALMoSWsdvtujMgiKZJPqs8B"
+    signalwire_token: "PT22cbdf68f035c6b0ae51a35ffb7b5d2e5f941e2af85ceaeb" #"PTa583b1d7fee9de0fc5e85a386b8da63b661430bc068a1576" #"pat_3ALMoSWsdvtujMgiKZJPqs8B"
   roles:
     - freeswitch

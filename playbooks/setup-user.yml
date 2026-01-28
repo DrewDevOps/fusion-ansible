@@ -1,0 +1,9 @@
+- name: Create user and configure SSH + sudo
+  hosts: bastion
+  become: true
+  become_method: sudo
+  vars:
+    new_user: devuser
+    local_public_key: "~/.ssh/id_rsa.pub"
+  roles:
+    - setup-users
